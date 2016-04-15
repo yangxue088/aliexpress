@@ -28,32 +28,45 @@ class ProductSpider(RedisSpider):
         yield self.next_request()
 
     def parse(self, response):
-        self.log('request header: {}'.format(response.request.headers), logging.INFO)
+        self.log('request header: {}'.format(response.request.headers), logging.DEBUG)
+        self.log('product url: {}'.format(response.url), logging.DEBUG)
 
-        self.log('product url: {}'.format(response.url), logging.INFO)
+        try:
+            store_url = response.css('.shop-name').xpath('a/@href').extract()[0]
+            self.log('crawl store url: {}'.format(store_url), logging.INFO)
 
-        store_url = response.css('.shop-name').xpath('a/@href').extract()[0]
-        self.log('crawl store url: {}'.format(store_url), logging.INFO)
+            item = UrlItem()
+            item['type'] = 'store'
+            item['url'] = store_url
+            yield item
 
-        item = UrlItem()
-        item['type'] = 'store'
-        item['url'] = store_url
-        yield item
+            self.product(response.url).store = store_url
 
-        self.product(response.url).store = store_url
+            feedback_base_url = response.xpath('//div[@id="feedback"]/iframe/@thesrc').extract()[0]
+            yield self.request_feedback(response.url, feedback_base_url)
 
-        feedback_base_url = response.xpath('//div[@id="feedback"]/iframe/@thesrc').extract()[0]
-        yield self.request_feedback(response.url, feedback_base_url)
+            parsed = urlparse.urlparse(feedback_base_url)
+            product_id = urlparse.parse_qs(parsed.query)['productId'][0]
+            yield self.request_order(response.url, product_id)
+        except:
+            try:
+                product_url = response.meta['redirect_urls'][0]
+            except:
+                product_url = response.url
+                self.log('strange product url: {}'.format(product_url), logging.ERROR)
+            finally:
+                self.log('meet anti-spider, back product: {}'.format(product_url), logging.INFO)
 
-        parsed = urlparse.urlparse(feedback_base_url)
-        product_id = urlparse.parse_qs(parsed.query)['productId'][0]
-        yield self.request_order(response.url, product_id)
+                item = UrlItem()
+                item['type'] = 'product'
+                item['url'] = product_url
+                yield item
 
     def request_order(self, product_url, product_id, page=1):
         order_url = 'http://feedback.aliexpress.com/display/evaluationProductDetailAjaxService.htm?productId={}&type=default&page={}'.format(
             product_id, page)
 
-        self.log('request order page: {}'.format(order_url), logging.INFO)
+        self.log('request order page: {}'.format(order_url), logging.DEBUG)
 
         return scrapy.Request(url=order_url, meta={'product_url': product_url, 'product_id': product_id, 'page': page},
                               callback=self.parse_order)
@@ -78,9 +91,7 @@ class ProductSpider(RedisSpider):
 
     def request_feedback(self, product_url, feedback_base_url, page=1):
         feedback_url = '{}&page={}'.format(feedback_base_url, page)
-
-        self.log('request feedback page: {}'.format(feedback_url), logging.INFO)
-
+        self.log('request feedback page: {}'.format(feedback_url), logging.DEBUG)
         return scrapy.Request(url=feedback_url, meta={'product_url': product_url, 'base_url': feedback_base_url, 'page': page},
                               callback=self.parse_feedback)
 
@@ -112,7 +123,7 @@ class ProductSpider(RedisSpider):
             assert product is not None
             assert product.url != ''
 
-            self.log('crawl product: {}'.format(product))
+            self.log('crawl product: {}'.format(product), logging.INFO)
 
             item = ProductItem()
             item['_id'] = product.url
