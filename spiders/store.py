@@ -33,15 +33,15 @@ class StoreSpider(RedisSpider):
         store_name = summary_tb_tds[0].xpath('a/text()').extract()[0]
         store_url = summary_tb_tds[0].xpath('a/@href').extract()[0]
         store_positive_feedback = summary_tb_tds[1].xpath('span/text()').extract()[0]
-        store_positive_score = summary_tb_tds[2].xpath('span/text()').extract()[0]
+        store_positive_score = int(summary_tb_tds[2].xpath('span/text()').extract()[0].replace(',', ''))
         store_since_time = datetime.strptime(summary_tb_tds[3].xpath('text()').extract()[0].strip(), '%d %b %Y')
 
         history_tds = response.xpath('//div[@id="feedback-history"]/div/table/tbody/tr/td/a/text()').extract()
-        one_month_feedback = [int(td.strip().replace(',', '')) for td in history_tds[::5]]
-        three_month_feedback = [int(td.strip().replace(',', '')) for td in history_tds[1::5]]
-        six_month_feedback = [int(td.strip().replace(',', '')) for td in history_tds[2::5]]
-        twelve_month_feedback = [int(td.strip().replace(',', '')) for td in history_tds[3::5]]
-        overall_feedback = [int(td.strip().replace(',', '')) for td in history_tds[4::5]]
+        one_month_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[::5]]
+        three_month_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[1::5]]
+        six_month_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[2::5]]
+        twelve_month_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[3::5]]
+        overall_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[4::5]]
 
         item = StoreItem()
 

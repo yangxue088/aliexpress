@@ -28,6 +28,8 @@ class ProductSpider(RedisSpider):
         yield self.next_request()
 
     def parse(self, response):
+        self.log('request header: {}'.format(response.request.headers), logging.INFO)
+
         self.log('product url: {}'.format(response.url), logging.INFO)
 
         store_url = response.css('.shop-name').xpath('a/@href').extract()[0]
@@ -57,7 +59,7 @@ class ProductSpider(RedisSpider):
                               callback=self.parse_order)
 
     def parse_order(self, response):
-        orders = json.loads(response.body)
+        orders = json.loads(response.body.replace('\\', ''))
 
         records = [record for record in orders['records'] if not self.filter.add(record['id'])]
 
