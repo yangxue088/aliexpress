@@ -33,7 +33,7 @@ class ProductItem(scrapy.Item):
     feedbacks = scrapy.Field()
 
     def queue(self):
-        return '{}:product'.format(self['prefix'])
+        return '{}product'.format(self['prefix'])
 
 
 class StoreItem(scrapy.Item):
@@ -62,4 +62,4 @@ class StoreItem(scrapy.Item):
     overall_feedback = scrapy.Field()
 
     def queue(self):
-        return '{}:store'.format(self['prefix'])
+        return '{}store'.format(self['prefix'])
