@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
+from pymongo import MongoClient
+from scrapy_redis.pipelines import RedisPipeline
 
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
+from items import UrlItem, ProductItem, StoreItem
 
 
-class AliexpressPipeline(object):
+class ToRedisPipeline(RedisPipeline):
     def process_item(self, item, spider):
+        if isinstance(item, UrlItem):
+            self.server.rpush('ali:{}:url'.format(item['type']), item['url'])
+        return item
+
+
+class ToMongoPipeline(object):
+    def __init__(self):
+        self.db = MongoClient().aliexpress
+
+    def process_item(self, item, spider):
+        if isinstance(item, ProductItem):
+            self.db['products'].insert_one(item)
+        elif isinstance(item, StoreItem):
+            self.db['stores'].insert_one(item)
         return item
