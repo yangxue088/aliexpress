@@ -13,14 +13,18 @@ class CategorySpider(scrapy.Spider):
         'http://www.aliexpress.com/',
     )
 
-    def __init__(self, base_url):
-        self.base_url = base_url
+    prefix = ''
+    base_url = ''
 
     def start_requests(self):
+        CategorySpider.prefix = self.settings['prefix']
+        CategorySpider.base_url = self.settings['base_url']
         yield self.request_page()
 
     def request_page(self, page=1):
-        url = self.base_url[:self.base_url.index('.html')] + '/{}'.format(page) + self.base_url[self.base_url.index('.html'):]
+        url = CategorySpider.base_url[:CategorySpider.base_url.index('.html')] + '/{}'.format(page) + CategorySpider.base_url[
+                                                                                                      CategorySpider.base_url.index(
+                                                                                                          '.html'):]
         return scrapy.Request(url=url, meta={'page': page})
 
     def parse(self, response):
@@ -30,6 +34,7 @@ class CategorySpider(scrapy.Spider):
 
         for link in links:
             item = UrlItem()
+            item['prefix'] = CategorySpider.prefix
             item['type'] = 'product'
             item['url'] = link[:link.index('?')]
             yield item

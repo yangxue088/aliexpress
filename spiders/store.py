@@ -15,10 +15,12 @@ class StoreSpider(RedisSpider):
         'http://www.aliexpress.com/',
     )
 
-    def __init__(self):
-        self.redis_key = 'ali:store:url'
+    prefix = ''
 
     def start_requests(self):
+        StoreSpider.prefix = self.settings['prefix']
+        self.redis_key = '{}:store'.format(StoreSpider.prefix)
+
         yield self.next_request()
 
     def parse(self, response):
@@ -44,7 +46,7 @@ class StoreSpider(RedisSpider):
         overall_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[4::5]]
 
         item = StoreItem()
-
+        item['prefix'] = StoreSpider.prefix
         item['_id'] = store_url
         item['url'] = store_url
         item['name'] = store_name

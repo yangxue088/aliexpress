@@ -8,7 +8,7 @@ from items import UrlItem, ProductItem, StoreItem
 class ToRedisPipeline(RedisPipeline):
     def process_item(self, item, spider):
         if isinstance(item, UrlItem):
-            self.server.rpush('ali:{}:url'.format(item['type']), item['url'])
+            self.server.rpush(item.queue(), item['url'])
         return item
 
 
@@ -17,8 +17,6 @@ class ToMongoPipeline(object):
         self.db = MongoClient().aliexpress
 
     def process_item(self, item, spider):
-        if isinstance(item, ProductItem):
-            self.db['products'].insert_one(item)
-        elif isinstance(item, StoreItem):
-            self.db['stores'].insert_one(item)
+        if isinstance(item, ProductItem) or isinstance(item, StoreItem):
+            self.db[item.queue()].insert_one(item)
         return item

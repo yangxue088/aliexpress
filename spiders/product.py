@@ -18,13 +18,16 @@ class ProductSpider(RedisSpider):
         'http://www.aliexpress.com/',
     )
 
-    def __init__(self):
-        self.redis_key = 'ali:product:url'
-        self.filter = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+    prefix = ''
 
+    def __init__(self):
+        self.filter = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
         self.products = dict()
 
     def start_requests(self):
+        ProductSpider.prefix = self.settings['prefix']
+        self.redis_key = '{}:product'.format(ProductSpider.prefix)
+
         yield self.next_request()
 
     def parse(self, response):
@@ -36,6 +39,7 @@ class ProductSpider(RedisSpider):
             self.log('crawl store url: {}'.format(store_url), logging.INFO)
 
             item = UrlItem()
+            item['prefix'] = ProductSpider.prefix
             item['type'] = 'store'
             item['url'] = store_url
             yield item
@@ -58,6 +62,7 @@ class ProductSpider(RedisSpider):
                 self.log('meet anti-spider, back product: {}'.format(product_url), logging.INFO)
 
                 item = UrlItem()
+                item['prefix'] = ProductSpider.prefix
                 item['type'] = 'product'
                 item['url'] = product_url
                 yield item
@@ -126,6 +131,7 @@ class ProductSpider(RedisSpider):
             self.log('crawl product: {}'.format(product), logging.INFO)
 
             item = ProductItem()
+            item['prefix'] = ProductSpider.prefix
             item['_id'] = product.url
             item['store'] = product.store
             item['url'] = product.url

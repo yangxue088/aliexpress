@@ -9,12 +9,19 @@ import scrapy
 
 
 class UrlItem(scrapy.Item):
+    prefix = scrapy.Field()
+
     type = scrapy.Field()
 
     url = scrapy.Field()
 
+    def queue(self):
+        return '{}:{}'.format(self['prefix'], self['type'])
+
 
 class ProductItem(scrapy.Item):
+    prefix = scrapy.Field()
+
     _id = scrapy.Field()
 
     store = scrapy.Field()
@@ -25,8 +32,13 @@ class ProductItem(scrapy.Item):
 
     feedbacks = scrapy.Field()
 
+    def queue(self):
+        return '{}:product'.format(self['prefix'])
+
 
 class StoreItem(scrapy.Item):
+    prefix = scrapy.Field()
+
     _id = scrapy.Field()
 
     url = scrapy.Field()
@@ -48,3 +60,6 @@ class StoreItem(scrapy.Item):
     twelve_month_feedback = scrapy.Field()
 
     overall_feedback = scrapy.Field()
+
+    def queue(self):
+        return '{}:store'.format(self['prefix'])
