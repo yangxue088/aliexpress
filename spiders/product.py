@@ -3,6 +3,7 @@ import json
 import logging
 import urlparse
 from datetime import datetime
+import time
 
 import scrapy
 from pybloom import ScalableBloomFilter
@@ -29,6 +30,10 @@ class ProductSpider(RedisSpider):
         self.redis_key = '{}:product'.format(ProductSpider.prefix)
 
         yield self.next_request()
+
+    def next_request(self):
+        time.sleep(1)
+        return super(ProductSpider, self).next_request()
 
     def parse(self, response):
         self.log('request header: {}'.format(response.request.headers), logging.DEBUG)

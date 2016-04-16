@@ -13,7 +13,7 @@ settings = {'DOWNLOAD_DELAY': 0, 'COOKIES_ENABLED': False, 'ITEM_PIPELINES': {
     'pipelines.DuplicatePipeline': 200,
     'pipelines.ToRedisPipeline': 300,
     'pipelines.ToMongoPipeline': 400,
-}, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.main', 'prefix': 'phonebagscases',
+}, 'LOG_LEVEL': 'INFO', 'prefix': 'phonebagscases',
             'base_url': 'http://www.aliexpress.com/category/380230/phone-bags-cases.html'}
 
 process = CrawlerProcess(settings)
