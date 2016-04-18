@@ -28,12 +28,30 @@ class ProductItem(scrapy.Item):
 
     url = scrapy.Field()
 
-    orders = scrapy.Field()
+    def queue(self):
+        return '{}product'.format(self['prefix'])
+
+
+class FeedbackItem(scrapy.Item):
+    prefix = scrapy.Field()
+
+    _id = scrapy.Field()
 
     feedbacks = scrapy.Field()
 
     def queue(self):
-        return '{}product'.format(self['prefix'])
+        return '{}feedback'.format(self['prefix'])
+
+
+class OrderItem(scrapy.Item):
+    prefix = scrapy.Field()
+
+    _id = scrapy.Field()
+
+    orders = scrapy.Field()
+
+    def queue(self):
+        return '{}order'.format(self['prefix'])
 
 
 class StoreItem(scrapy.Item):

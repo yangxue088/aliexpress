@@ -4,7 +4,7 @@ from pymongo import MongoClient
 from scrapy.exceptions import DropItem
 from scrapy_redis.pipelines import RedisPipeline
 
-from items import UrlItem, ProductItem, StoreItem
+from items import UrlItem, ProductItem, StoreItem, FeedbackItem, OrderItem
 
 
 class DuplicatePipeline(object):
@@ -30,6 +30,6 @@ class ToMongoPipeline(object):
         self.db = MongoClient().aliexpress
 
     def process_item(self, item, spider):
-        if isinstance(item, ProductItem) or isinstance(item, StoreItem):
+        if isinstance(item, ProductItem) or isinstance(item, StoreItem) or isinstance(item, FeedbackItem) or isinstance(item, OrderItem):
             self.db[item.queue()].insert_one(item)
         return item
