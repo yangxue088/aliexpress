@@ -9,11 +9,11 @@ from items import UrlItem, ProductItem, StoreItem, FeedbackItem, OrderItem
 
 class DuplicatePipeline(object):
     def __init__(self):
-        self.urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+        self.filter = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def process_item(self, item, spider):
-        if isinstance(item, ProductItem) and self.urls.add(item['_id']):
-            raise DropItem('duplicate item found, for: {}'.format(item['_id']))
+        if not isinstance(item, UrlItem) and self.filter.add('{}{}'.format(spider.name, item['_id'])):
+            raise DropItem('duplicate item found, spider name: {}, for: {}'.format(spider.name, item['_id']))
         else:
             return item
 

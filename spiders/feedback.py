@@ -28,13 +28,13 @@ class FeedbackSpider(RedisSpider):
         yield self.next_request()
 
     def make_requests_from_url(self, url):
+        self.log('request order page: {}'.format(url), logging.INFO)
         parsed = urlparse.urlparse(url)
         product_id = urlparse.parse_qs(parsed.query)['productId'][0]
         return self.request(product_id, url)
 
     def request(self, product_id, base_url, page=1):
         feedback_url = '{}&page={}'.format(base_url, page)
-        self.log('request feedback page: {}'.format(feedback_url), logging.DEBUG)
         return scrapy.Request(url=feedback_url, meta={'product_id': product_id, 'base_url': base_url, 'page': page},
                               callback=self.parse)
 
