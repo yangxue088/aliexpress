@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import random
+import time
 import urlparse
 from datetime import datetime
-import time
 
 import scrapy
 from pybloom import ScalableBloomFilter
@@ -32,7 +33,7 @@ class ProductSpider(RedisSpider):
         yield self.next_request()
 
     def next_request(self):
-        time.sleep(1)
+        time.sleep(random.randint(1, 3))
         return super(ProductSpider, self).next_request()
 
     def parse(self, response):
