@@ -22,9 +22,16 @@ class CategorySpider(scrapy.Spider):
         yield self.request_page()
 
     def request_page(self, page=1):
-        url = CategorySpider.base_url[:CategorySpider.base_url.index('.html')] + '/{}'.format(page) + CategorySpider.base_url[
-                                                                                                      CategorySpider.base_url.index(
-                                                                                                          '.html'):]
+        url = CategorySpider.base_url
+
+        if '.html' in url:
+            # 按类别进行搜索
+            url = url[:url.index('.html')] + '/{}'.format(page) + url[url.index('.html'):]
+        else:
+            # 按关键词进行搜索
+            url = '{}&page={}'.format(url, page)
+
+        self.log('request url: {}'.format(url), logging.INFO)
         return scrapy.Request(url=url, meta={'page': page})
 
     def parse(self, response):
