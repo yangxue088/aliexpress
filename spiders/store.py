@@ -45,9 +45,11 @@ class StoreSpider(RedisSpider):
         twelve_month_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[3::5]]
         overall_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[4::5]]
 
+        store_id = store_url[store_url.index('/') + 1:]
+
         item = StoreItem()
         item['prefix'] = StoreSpider.prefix
-        item['_id'] = store_url
+        item['_id'] = store_id
         item['url'] = store_url
         item['name'] = store_name
         item['positive_feedback'] = store_positive_feedback
@@ -58,5 +60,15 @@ class StoreSpider(RedisSpider):
         item['six_month_feedback'] = six_month_feedback
         item['twelve_month_feedback'] = twelve_month_feedback
         item['overall_feedback'] = overall_feedback
+
+        all_product_url = 'http://www.aliexpress.com/store/all-wholesale-products/{}.html'.format(store_id)
+
+        return scrapy.Request(all_product_url, meta={'item': item}, callback=self.parse_product_num)
+
+    def parse_product_num(self, response):
+        item = response.meta['item']
+
+        product_num = int(response.xpath('//div[@id="result-info"]/strong/text()').extract()[0])
+        item['product'] = product_num
 
         return item

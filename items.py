@@ -63,6 +63,8 @@ class StoreItem(scrapy.Item):
 
     name = scrapy.Field()
 
+    product = scrapy.Field()
+
     positive_feedback = scrapy.Field()
 
     positive_score = scrapy.Field()
