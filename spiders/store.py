@@ -45,7 +45,7 @@ class StoreSpider(RedisSpider):
         twelve_month_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[3::5]]
         overall_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[4::5]]
 
-        store_id = store_url[store_url.index('/') + 1:]
+        store_id = store_url.split('/')[-1]
 
         item = StoreItem()
         item['prefix'] = StoreSpider.prefix
