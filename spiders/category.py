@@ -16,6 +16,9 @@ class CategorySpider(scrapy.Spider):
     prefix = ''
     base_url = ''
 
+    def __init__(self, reducer):
+        self.reducer = reducer
+
     def start_requests(self):
         CategorySpider.prefix = self.settings['prefix']
         CategorySpider.base_url = self.settings['base_url']
@@ -32,21 +35,27 @@ class CategorySpider(scrapy.Spider):
             url = '{}&page={}'.format(url, page)
 
         self.log('request url: {}'.format(url), logging.INFO)
-        return scrapy.Request(url=url, meta={'page': page})
+        return scrapy.Request(url=url, meta={'page': page}, callback=self.parse)
 
     def parse(self, response):
-        links = response.css('a.product').xpath('@href').extract()
+        list_items = [item.css('a.product').xpath('@href').extract() + item.css('a.rate-num').xpath('text()').extract() +
+                      item.css('a.order-num-a').xpath('em/text()').extract() for item in response.css('li.list-item')]
 
-        self.log('request page: {}, crawl product: {}'.format(response.url, len(links)), logging.INFO)
+        self.log('request page: {}, crawl product: {}'.format(response.url, len(list_items)), logging.INFO)
 
-        for link in links:
-            item = UrlItem()
-            item['prefix'] = CategorySpider.prefix
-            item['type'] = 'product'
-            item['url'] = link[:link.index('?')]
-            yield item
+        for href, rate, order in (
+                (list_item[0][:list_item[0].index('?')], int(list_item[1][list_item[1].index('(') + 1:list_item[1].index(')')]),
+                 float(list_item[2][list_item[2].index('(') + 1:list_item[2].index(')')])) for list_item in
+                list_items if
+                        len(list_item) == 3):
+            if self.reducer(rate, order):
+                item = UrlItem()
+                item['prefix'] = CategorySpider.prefix
+                item['type'] = 'product'
+                item['url'] = href
+                yield item
 
-        if len(links) > 0:
+        if len(list_items) > 0:
             yield self.request_page(int(response.meta['page']) + 1)
         else:
             self.log('category spider finish, base url: {}'.format(self.base_url), logging.INFO)

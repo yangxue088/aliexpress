@@ -2,6 +2,7 @@
 import logging
 import urlparse
 
+from pybloom import ScalableBloomFilter
 from scrapy_redis.spiders import RedisSpider
 
 from items import UrlItem, ProductItem
@@ -18,12 +19,17 @@ class ProductSpider(RedisSpider):
 
     def __init__(self):
         self.products = dict()
+        self.urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def start_requests(self):
         ProductSpider.prefix = self.settings['prefix']
         self.redis_key = '{}:product'.format(ProductSpider.prefix)
 
         yield self.next_request()
+
+    def make_requests_from_url(self, url):
+        if not self.urls.add(url):
+            return super(ProductSpider, self).make_requests_from_url(url)
 
     def parse(self, response):
         self.log('product url: {}'.format(response.url), logging.INFO)
