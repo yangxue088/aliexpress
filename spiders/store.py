@@ -27,6 +27,10 @@ class StoreSpider(RedisSpider):
 
         yield self.next_request()
 
+    def make_requests_from_url(self, url):
+        if not self.stores.add(url):
+            return super(StoreSpider, self).make_requests_from_url(url)
+
     def parse(self, response):
         try:
             self.log('request store: {}'.format(response.url), logging.INFO)
