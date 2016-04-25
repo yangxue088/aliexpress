@@ -4,6 +4,7 @@ from datetime import datetime
 
 import scrapy
 from pybloom import ScalableBloomFilter
+from pymongo import MongoClient
 from scrapy_redis.spiders import RedisSpider
 
 from items import StoreItem, UrlItem
@@ -18,18 +19,23 @@ class StoreSpider(RedisSpider):
 
     prefix = ''
 
-    def __init__(self):
-        self.stores = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+    stores = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def start_requests(self):
         StoreSpider.prefix = self.settings['prefix']
         self.redis_key = '{}:store'.format(StoreSpider.prefix)
 
+        db = MongoClient().aliexpress
+        for store in db['{}store'.format(StoreSpider.prefix)].find():
+            StoreSpider.stores.add(store['url'])
+
         yield self.next_request()
 
     def make_requests_from_url(self, url):
-        if not self.stores.add(url):
+        if not StoreSpider.stores.add(url):
             return super(StoreSpider, self).make_requests_from_url(url)
+        else:
+            return self.next_request()
 
     def parse(self, response):
         try:
