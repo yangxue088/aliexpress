@@ -25,7 +25,14 @@ class ProductSpider(RedisSpider):
         ProductSpider.prefix = self.settings['prefix']
         self.redis_key = '{}:product'.format(ProductSpider.prefix)
 
-        yield self.next_request()
+        for value in self.server.lrange('{}:processed'.format(ProductSpider.prefix), 0, 100000):
+            self.urls.add(value)
+
+        while True:
+            request = self.next_request()
+            if request:
+                yield request
+                break
 
     def make_requests_from_url(self, url):
         if not self.urls.add(url):
@@ -37,6 +44,12 @@ class ProductSpider(RedisSpider):
         try:
             store_url = response.css('.shop-name').xpath('a/@href').extract()[0]
             self.log('crawl store url: {}'.format(store_url), logging.INFO)
+
+            store_item = UrlItem()
+            store_item['prefix'] = ProductSpider.prefix
+            store_item['type'] = 'processed'
+            store_item['url'] = response.url
+            yield store_item
 
             store_item = UrlItem()
             store_item['prefix'] = ProductSpider.prefix
