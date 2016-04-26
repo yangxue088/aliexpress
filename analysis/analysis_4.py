@@ -28,12 +28,16 @@ if __name__ == '__main__':
             self.id = id
             self.url = ''
             self.store = ''
+            self.percent_num = 0
+            self.rantings_num = 0
+            self.order_num = 0
             self.orders = []
             self.feedbacks = []
 
         def __str__(self):
-            return 'prefix: {}, id: {}, url: {}, store: {}, orders: {}, feedback: {}'.format(self.prefix, self.id, self.url, self.store,
-                                                                                             len(self.orders), len(self.feedbacks))
+            return 'prefix: {}, id: {}, url: {}, store: {}, percent: {}, rating: {}, order: {}, orders: {}, feedback: {}'.format(
+                self.prefix, self.id, self.url, self.store,
+                self.percent_num, self.rantings_num, self.order_num, len(self.orders), len(self.feedbacks))
 
 
     def get_product(id):
@@ -47,6 +51,9 @@ if __name__ == '__main__':
         get_product(product['_id']).prefix = product['prefix']
         get_product(product['_id']).url = product['url']
         get_product(product['_id']).store = product['store']
+        get_product(product['_id']).percent_num = product['percent_num']
+        get_product(product['_id']).rantings_num = product['rantings_num']
+        get_product(product['_id']).order_num = product['order_num']
 
     for order in order_coll.find():
         get_product(order['_id']).orders = order['orders']
@@ -74,8 +81,8 @@ if __name__ == '__main__':
                 first_feedback = 'N/A'
 
             rows.append(
-                {'prefix': product.prefix, 'id': product.id, 'url': product.url, 'store': product.store, 'orders': len(product.orders),
-                 'feedbacks': len(product.feedbacks),
+                {'prefix': product.prefix, 'id': product.id, 'url': product.url, 'store': product.store, 'orders': product.order_num,
+                 'feedbacks': product.rantings_num,
                  'first_order': first_order,
                  'first_feedback': first_feedback,
                  '4_month_orders': sum(1 for order in product.orders if order['date'] >= datetime.datetime(2016, 4, 1)),

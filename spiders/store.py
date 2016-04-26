@@ -36,6 +36,7 @@ class StoreSpider(RedisSpider):
                 break
 
     def make_requests_from_url(self, url):
+        self.log('make request from url: {}'.format(url), logging.INFO)
         if not StoreSpider.stores.add(url):
             return super(StoreSpider, self).make_requests_from_url(url)
 
@@ -62,6 +63,8 @@ class StoreSpider(RedisSpider):
                 yield url_item
 
     def parse_evaluation_detail(self, response):
+        self.log('parse evaluation detail: {}'.format(response.url), logging.INFO)
+
         summary_tb_tds = response.xpath('//div[@id="feedback-summary"]/div/table/tbody/tr/td')
         store_name = summary_tb_tds[0].xpath('a/text()').extract()[0]
         store_url = summary_tb_tds[0].xpath('a/@href').extract()[0]
@@ -94,9 +97,13 @@ class StoreSpider(RedisSpider):
             item['overall_feedback'] = overall_feedback
 
             all_product_url = 'http://www.aliexpress.com/store/all-wholesale-products/{}.html'.format(store_id)
+
+            self.log('request product store: {}'.format(response.url), logging.INFO)
             return scrapy.Request(all_product_url, meta={'item': item}, callback=self.parse_product_num)
 
     def parse_product_num(self, response):
+        self.log('parse product num: {}'.format(response.url), logging.INFO)
+
         item = response.meta['item']
 
         product_num = int(response.xpath('//div[@id="result-info"]/strong/text()').extract()[0].replace(',', ''))

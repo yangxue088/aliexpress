@@ -3,9 +3,6 @@
 from scrapy import optional_features
 from scrapy.crawler import CrawlerProcess
 
-from spiders.feedback import FeedbackSpider
-from spiders.order import OrderSpider
-from spiders.product import ProductSpider
 from spiders.store import StoreSpider
 
 optional_features.remove('boto')
@@ -14,7 +11,7 @@ settings = {'TELNETCONSOLE_ENABLED': False, 'COOKIES_ENABLED': False, 'ITEM_PIPE
     'pipelines.DuplicatePipeline': 200,
     'pipelines.ToRedisPipeline': 300,
     'pipelines.ToMongoPipeline': 400,
-}, 'LOG_LEVEL': 'INFO', 'prefix': 'mobilephonebatteries',
+}, 'LOG_LEVEL': 'INFO', 'prefix': 'phonebagscasesleathercases',
             'base_url': 'http://www.aliexpress.com/category/100003570/mobile-phone-batteries.html'}
 
 crawlera_settings = dict(settings)
@@ -27,15 +24,14 @@ crawlera_settings.update({'DOWNLOADER_MIDDLEWARES': {'scrapy_crawlera.CrawleraMi
                           'AUTOTHROTTLE_ENABLED': False,
                           'DOWNLOAD_TIMEOUT': 10})
 
-# process = CrawlerProcess(settings)
-process = CrawlerProcess(crawlera_settings)
+process = CrawlerProcess(settings)
+# process = CrawlerProcess(crawlera_settings)
 
 # process.crawl(CategorySpider, lambda rate, order: rate >= 100 or order >= 100)
 # process.crawl(ProductSpider)
 # for i in xrange(100):
 #     process.crawl(FeedbackSpider)
 #     process.crawl(OrderSpider)
-# for i in xrange(2):
 process.crawl(StoreSpider)
 
 process.start()
