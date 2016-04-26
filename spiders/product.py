@@ -61,11 +61,25 @@ class ProductSpider(RedisSpider):
             parsed = urlparse.urlparse(feedback_base_url)
             product_id = urlparse.parse_qs(parsed.query)['productId'][0]
 
+            try:
+                percent_num = response.css('.percent-num').xpath('text()').extract()[0]
+                rantings_text = response.css('.rantings-num').xpath('text()').extract()[0]
+                rantings_num = rantings_text[1:rantings_text.index(' ')]
+                order_text = response.css('.order-num').xpath('text()').extract()[0]
+                order_num = order_text[:order_text.index(' ')]
+            except:
+                percent_num = 0
+                rantings_num = 0
+                order_num = 0
+
             product_item = ProductItem()
             product_item['prefix'] = ProductSpider.prefix
             product_item['_id'] = product_id
             product_item['store'] = store_url
             product_item['url'] = response.url
+            product_item['percent_num'] = percent_num
+            product_item['rantings_num'] = rantings_num
+            product_item['order_num'] = order_num
             yield product_item
 
             feedback_item = UrlItem()
