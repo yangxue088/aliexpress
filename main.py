@@ -3,6 +3,9 @@
 from scrapy import optional_features
 from scrapy.crawler import CrawlerProcess
 
+from spiders.feedback import FeedbackSpider
+from spiders.order import OrderSpider
+from spiders.product import ProductSpider
 from spiders.store import StoreSpider
 
 optional_features.remove('boto')
@@ -11,8 +14,8 @@ settings = {'TELNETCONSOLE_ENABLED': False, 'COOKIES_ENABLED': False, 'ITEM_PIPE
     'pipelines.DuplicatePipeline': 200,
     'pipelines.ToRedisPipeline': 300,
     'pipelines.ToMongoPipeline': 400,
-}, 'LOG_LEVEL': 'INFO', 'prefix': 'copyearphonesheadphones',
-            'base_url': 'http://www.aliexpress.com/category/200003130/armbands.html'}
+}, 'LOG_LEVEL': 'INFO', 'prefix': 'mobilephonebatteries',
+            'base_url': 'http://www.aliexpress.com/category/100003570/mobile-phone-batteries.html'}
 
 crawlera_settings = dict(settings)
 crawlera_settings.update({'DOWNLOADER_MIDDLEWARES': {'scrapy_crawlera.CrawleraMiddleware': 600},

@@ -61,11 +61,23 @@ if __name__ == '__main__':
 
         rows = []
         for product in products.values():
+            print 'product: {}'.format(product)
+
+            if product.orders:
+                first_order = min(product.orders, key=lambda o: o['date'])['date'].strftime('%Y-%m-%d')
+            else:
+                first_order = 'N/A'
+
+            if product.feedbacks:
+                first_feedback = min(product.feedbacks, key=lambda o: o['time'])['time'].strftime('%Y-%m-%d')
+            else:
+                first_feedback = 'N/A'
+
             rows.append(
                 {'prefix': product.prefix, 'id': product.id, 'url': product.url, 'store': product.store, 'orders': len(product.orders),
                  'feedbacks': len(product.feedbacks),
-                 'first_order': min(product.orders, key=lambda o: o['date'])['date'].strftime('%Y-%m-%d'),
-                 'first_feedback': min(product.feedbacks, key=lambda o: o['time'])['time'].strftime('%Y-%m-%d'),
+                 'first_order': first_order,
+                 'first_feedback': first_feedback,
                  '4_month_orders': sum(1 for order in product.orders if order['date'] >= datetime.datetime(2016, 4, 1)),
                  '3_month_orders': sum(1 for order in product.orders if
                                        datetime.datetime(2016, 3, 1) <= order['date'] < datetime.datetime(2016, 4, 1)),

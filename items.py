@@ -28,6 +28,12 @@ class ProductItem(scrapy.Item):
 
     url = scrapy.Field()
 
+    percent_num = scrapy.Field()
+
+    rantings_num = scrapy.Field()
+
+    order_num = scrapy.Field()
+
     def queue(self):
         return '{}product'.format(self['prefix'])
 
