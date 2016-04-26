@@ -29,13 +29,15 @@ class StoreSpider(RedisSpider):
         for store in db['{}store'.format(StoreSpider.prefix)].find():
             StoreSpider.stores.add(store['url'])
 
-        yield self.next_request()
+        while True:
+            request = self.next_request()
+            if request:
+                yield request
+                break
 
     def make_requests_from_url(self, url):
         if not StoreSpider.stores.add(url):
             return super(StoreSpider, self).make_requests_from_url(url)
-        else:
-            return self.next_request()
 
     def parse(self, response):
         try:
