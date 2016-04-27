@@ -4,6 +4,9 @@ import urlparse
 from datetime import datetime
 
 import scrapy
+from pybloom import ScalableBloomFilter
+from pymongo import MongoClient
+from scrapy.exceptions import CloseSpider
 from scrapy_redis.spiders import RedisSpider
 
 from items import FeedbackItem
@@ -18,27 +21,59 @@ class FeedbackSpider(RedisSpider):
 
     prefix = ''
 
+    ids = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
     def __init__(self):
         self.feedbacks = dict()
+        self.redis_queue = None
+
+    def get_queue(self):
+        for value in set(self.server.lrange(self.redis_key, 0, -1)):
+            yield value
 
     def start_requests(self):
         FeedbackSpider.prefix = self.settings['prefix']
         self.redis_key = '{}:feedback'.format(FeedbackSpider.prefix)
 
+        self.redis_queue = self.get_queue()
+
+        db = MongoClient().aliexpress
+        for feedback in db['{}feedback'.format(FeedbackSpider.prefix)].find():
+            FeedbackSpider.ids.add(feedback['_id'])
+
         yield self.next_request()
 
+    def next_request(self):
+        while True:
+            try:
+                url = next(self.redis_queue)
+            except StopIteration:
+                url = None
+
+            if not (url and FeedbackSpider.ids.add(urlparse.parse_qs(urlparse.urlparse(url).query)['productId'][0])):
+                break
+
+        if url:
+            return self.make_requests_from_url(url)
+        else:
+            raise CloseSpider('redis queue has no url to request')
+
     def make_requests_from_url(self, url):
-        self.log('request order page: {}'.format(url), logging.INFO)
+        self.log('request feedback url: {}'.format(url), logging.INFO)
         parsed = urlparse.urlparse(url)
         product_id = urlparse.parse_qs(parsed.query)['productId'][0]
         return self.request(product_id, url)
 
     def request(self, product_id, base_url, page=1):
         feedback_url = '{}&page={}'.format(base_url, page)
+        self.log('request feedback page: {}'.format(feedback_url), logging.INFO)
+
         return scrapy.Request(url=feedback_url, meta={'product_id': product_id, 'base_url': base_url, 'page': page},
                               callback=self.parse)
 
     def parse(self, response):
+        self.log('parse feedback page: {}'.format(response.url), logging.INFO)
+
         feedback_items = response.css('.feedback-item')
         if len(feedback_items) > 0:
             for feedback_item in feedback_items:

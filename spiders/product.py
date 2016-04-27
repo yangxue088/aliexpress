@@ -3,6 +3,8 @@ import logging
 import urlparse
 
 from pybloom import ScalableBloomFilter
+from pymongo import MongoClient
+from scrapy.exceptions import CloseSpider
 from scrapy_redis.spiders import RedisSpider
 
 from items import UrlItem, ProductItem
@@ -19,24 +21,39 @@ class ProductSpider(RedisSpider):
 
     def __init__(self):
         self.products = dict()
-        self.urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+        self.ids = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+        self.redis_queue = None
+
+    def get_queue(self):
+        for value in set(self.server.lrange(self.redis_key, 0, -1)):
+            yield value
 
     def start_requests(self):
         ProductSpider.prefix = self.settings['prefix']
         self.redis_key = '{}:product'.format(ProductSpider.prefix)
 
-        for value in self.server.lrange('{}:processed'.format(ProductSpider.prefix), 0, 100000):
-            self.urls.add(value)
+        self.redis_queue = self.get_queue()
 
+        db = MongoClient().aliexpress
+        for product in db['{}product'.format(ProductSpider.prefix)].find():
+            self.ids.add(product['url'][product['url'].rfind('/') + 1:product['url'].rfind('.')])
+
+        yield self.next_request()
+
+    def next_request(self):
         while True:
-            request = self.next_request()
-            if request:
-                yield request
+            try:
+                url = next(self.redis_queue)
+            except StopIteration:
+                url = None
+
+            if not (url and self.ids.add(url[url.rfind('/') + 1:url.rfind('.')])):
                 break
 
-    def make_requests_from_url(self, url):
-        if not self.urls.add(url):
-            return super(ProductSpider, self).make_requests_from_url(url)
+        if url:
+            return self.make_requests_from_url(url)
+        else:
+            raise CloseSpider('redis queue has no url to request')
 
     def parse(self, response):
         self.log('product url: {}'.format(response.url), logging.INFO)
@@ -44,12 +61,6 @@ class ProductSpider(RedisSpider):
         try:
             store_url = response.css('.shop-name').xpath('a/@href').extract()[0]
             self.log('crawl store url: {}'.format(store_url), logging.INFO)
-
-            store_item = UrlItem()
-            store_item['prefix'] = ProductSpider.prefix
-            store_item['type'] = 'processed'
-            store_item['url'] = response.url
-            yield store_item
 
             store_item = UrlItem()
             store_item['prefix'] = ProductSpider.prefix

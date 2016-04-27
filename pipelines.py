@@ -12,8 +12,13 @@ class DuplicatePipeline(object):
         self.filter = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def process_item(self, item, spider):
-        if not isinstance(item, UrlItem) and self.filter.add('{}{}'.format(spider.name, item['_id'])):
-            raise DropItem('duplicate item found, spider name: {}, for: {}'.format(spider.name, item['_id']))
+        if isinstance(item, UrlItem):
+            uid = '{}{}{}'.format(spider.prefix, spider.name, item['url'])
+        else:
+            uid = '{}{}{}'.format(spider.prefix, spider.name, item['_id'])
+
+        if self.filter.add(uid):
+            raise DropItem('duplicate item found')
         else:
             return item
 

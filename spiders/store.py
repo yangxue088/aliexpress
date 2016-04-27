@@ -5,6 +5,7 @@ from datetime import datetime
 import scrapy
 from pybloom import ScalableBloomFilter
 from pymongo import MongoClient
+from scrapy.exceptions import CloseSpider
 from scrapy_redis.spiders import RedisSpider
 
 from items import StoreItem, UrlItem
@@ -19,26 +20,40 @@ class StoreSpider(RedisSpider):
 
     prefix = ''
 
-    stores = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+    def __init__(self):
+        self.redis_queue = None
+        self.ids = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
+    def get_queue(self):
+        for value in set(self.server.lrange(self.redis_key, 0, -1)):
+            yield value
 
     def start_requests(self):
         StoreSpider.prefix = self.settings['prefix']
         self.redis_key = '{}:store'.format(StoreSpider.prefix)
 
+        self.redis_queue = self.get_queue()
+
         db = MongoClient().aliexpress
         for store in db['{}store'.format(StoreSpider.prefix)].find():
-            StoreSpider.stores.add(store['url'])
+            self.ids.add(store['url'][store['url'].rfind('/') + 1:])
 
+        yield self.next_request()
+
+    def next_request(self):
         while True:
-            request = self.next_request()
-            if request:
-                yield request
+            try:
+                url = next(self.redis_queue)
+            except StopIteration:
+                url = None
+
+            if not (url and self.ids.add(url[url.rfind('/') + 1:])):
                 break
 
-    def make_requests_from_url(self, url):
-        self.log('make request from url: {}'.format(url), logging.INFO)
-        if not StoreSpider.stores.add(url):
-            return super(StoreSpider, self).make_requests_from_url(url)
+        if url:
+            return self.make_requests_from_url(url)
+        else:
+            raise CloseSpider('redis queue has no url to request')
 
     def parse(self, response):
         try:
@@ -81,25 +96,24 @@ class StoreSpider(RedisSpider):
 
         store_id = store_url.split('/')[-1]
 
-        if not self.stores.add(store_id):
-            item = StoreItem()
-            item['prefix'] = StoreSpider.prefix
-            item['_id'] = store_id
-            item['url'] = store_url
-            item['name'] = store_name
-            item['positive_feedback'] = store_positive_feedback
-            item['positive_score'] = store_positive_score
-            item['since_time'] = store_since_time
-            item['one_month_feedback'] = one_month_feedback
-            item['three_month_feedback'] = three_month_feedback
-            item['six_month_feedback'] = six_month_feedback
-            item['twelve_month_feedback'] = twelve_month_feedback
-            item['overall_feedback'] = overall_feedback
+        item = StoreItem()
+        item['prefix'] = StoreSpider.prefix
+        item['_id'] = store_id
+        item['url'] = store_url
+        item['name'] = store_name
+        item['positive_feedback'] = store_positive_feedback
+        item['positive_score'] = store_positive_score
+        item['since_time'] = store_since_time
+        item['one_month_feedback'] = one_month_feedback
+        item['three_month_feedback'] = three_month_feedback
+        item['six_month_feedback'] = six_month_feedback
+        item['twelve_month_feedback'] = twelve_month_feedback
+        item['overall_feedback'] = overall_feedback
 
-            all_product_url = 'http://www.aliexpress.com/store/all-wholesale-products/{}.html'.format(store_id)
+        all_product_url = 'http://www.aliexpress.com/store/all-wholesale-products/{}.html'.format(store_id)
 
-            self.log('request product store: {}'.format(response.url), logging.INFO)
-            return scrapy.Request(all_product_url, meta={'item': item}, callback=self.parse_product_num)
+        self.log('request product store: {}'.format(response.url), logging.INFO)
+        return scrapy.Request(all_product_url, meta={'item': item}, callback=self.parse_product_num)
 
     def parse_product_num(self, response):
         self.log('parse product num: {}'.format(response.url), logging.INFO)
