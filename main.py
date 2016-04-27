@@ -3,10 +3,8 @@
 from scrapy import optional_features
 from scrapy.crawler import CrawlerProcess
 
-from spiders.category import CategorySpider
 from spiders.feedback import FeedbackSpider
 from spiders.order import OrderSpider
-from spiders.product import ProductSpider
 from spiders.store import StoreSpider
 
 optional_features.remove('boto')
@@ -15,8 +13,8 @@ settings = {'TELNETCONSOLE_ENABLED': False, 'COOKIES_ENABLED': False, 'ITEM_PIPE
     'pipelines.DuplicatePipeline': 200,
     'pipelines.ToRedisPipeline': 300,
     'pipelines.ToMongoPipeline': 400,
-}, 'LOG_LEVEL': 'INFO', 'prefix': 'phonebagscasesrhinestonecases',
-            'base_url': 'http://www.aliexpress.com/category/380230/phone-bags-cases.html?pvId=351-200005486'}
+}, 'LOG_LEVEL': 'INFO', 'prefix': 'chargers',
+            'base_url': 'http://www.aliexpress.com/category/100003571/chargers-docks.html'}
 
 crawlera_settings = dict(settings)
 crawlera_settings.update({'DOWNLOADER_MIDDLEWARES': {'scrapy_crawlera.CrawleraMiddleware': 600},
@@ -33,9 +31,9 @@ process = CrawlerProcess(settings)
 
 # process.crawl(CategorySpider, lambda rate, order: rate >= 100 or order >= 100)
 # process.crawl(ProductSpider)
-# for i in xrange(100):
-#     process.crawl(FeedbackSpider)
-#     process.crawl(OrderSpider)
+for i in xrange(100):
+    process.crawl(FeedbackSpider)
+    process.crawl(OrderSpider)
 process.crawl(StoreSpider)
 
 process.start()

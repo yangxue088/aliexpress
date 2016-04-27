@@ -25,7 +25,7 @@ class ProductSpider(RedisSpider):
         self.redis_queue = None
 
     def get_queue(self):
-        for value in set(self.server.lrange(self.redis_key, 0, -1)):
+        for value in set(self.server.smembers(self.redis_key)):
             yield value
 
     def start_requests(self):

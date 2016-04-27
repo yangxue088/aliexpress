@@ -26,7 +26,7 @@ class DuplicatePipeline(object):
 class ToRedisPipeline(RedisPipeline):
     def process_item(self, item, spider):
         if isinstance(item, UrlItem):
-            self.server.rpush(item.queue(), item['url'])
+            self.server.sadd(item.queue(), item['url'])
         return item
 
 
