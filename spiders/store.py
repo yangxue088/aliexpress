@@ -61,7 +61,16 @@ class StoreSpider(RedisSpider):
 
             owner_member_id = response.css('.s-alitalk').xpath('a/@data-id1').extract()[0]
             evaluation_detail_url = 'http://feedback.aliexpress.com/display/evaluationDetail.htm?ownerMemberId={}'.format(owner_member_id)
-            yield scrapy.Request(url=evaluation_detail_url, callback=self.parse_evaluation_detail)
+
+            store_feedback_item = UrlItem()
+            store_feedback_item['prefix'] = StoreSpider.prefix
+            store_feedback_item['type'] = 'storefeedback'
+            store_feedback_item[
+                'url'] = 'http://feedback.aliexpress.com/display/evaluationList.htm?ownerMemberId={}&refreshPage=received'.format(
+                owner_member_id)
+
+            yield scrapy.Request(url=evaluation_detail_url, callback=self.parse_evaluation_detail,
+                                 meta={'store_feedback_item': store_feedback_item})
         except:
             try:
                 store_url = response.meta['redirect_urls'][0]
@@ -95,6 +104,10 @@ class StoreSpider(RedisSpider):
         overall_feedback = [int(td.strip().replace(',', '').replace('-', '0')) for td in history_tds[4::5]]
 
         store_id = store_url.split('/')[-1]
+
+        # store_feedback_item = response.meta['store_feedback_item']
+        # store_feedback_item['url'] += '&storeId={}'.format(store_id)
+        # yield store_feedback_item
 
         item = StoreItem()
         item['prefix'] = StoreSpider.prefix

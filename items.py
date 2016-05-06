@@ -89,3 +89,14 @@ class StoreItem(scrapy.Item):
 
     def queue(self):
         return '{}store'.format(self['prefix'])
+
+
+class StoreFeedbackItem(scrapy.Item):
+    prefix = scrapy.Field()
+
+    _id = scrapy.Field()
+
+    feedbacks = scrapy.Field()
+
+    def queue(self):
+        return '{}storefeedback'.format(self['prefix'])
